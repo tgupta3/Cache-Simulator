@@ -23,7 +23,7 @@ int memory_traffic=0;
 
 struct cache_params{
 int SIZE,BLOCKSIZE,ASSOC,SET_NO,TAG_SIZE,INDEX_SIZE,BLOCK_OFFSET_BITS;
-				int READS,READS_MISSES,WRITE,WRITES_MISSES,SWAP_REQUEST;
+				int READS,READS_MISSES,WRITE,WRITES_MISSES,SWAP_REQUEST,WRITE_BACKS;
 				int SWAP_RATE,SWAP_NO;
 				
 };
@@ -146,10 +146,12 @@ void write_request(string write_addr,int cache_no)
 							cout<<"performing write to next level coz dirty bit"<<endl;
 							if(cache_no!=C_NUM-1)//check if it's not  the last cache
 							{	
-							write_request(rep_addr,(cache_no+1));    
+								cachep[cache_no].WRITE_BACKS++;
+								write_request(rep_addr,(cache_no+1));    
 							}
 							else
 							{	
+								cachep[cache_no].WRITE_BACKS++;
 								memory_traffic++;
 							}	
 							}
@@ -208,6 +210,7 @@ void write_request(string write_addr,int cache_no)
 			if(cache_no!=C_NUM-1)//check if it's the last cache
 			{	
 			cout<<"reading from catch "<<cache_no+1<<endl;
+				
 			hit=read_request(bin2hex(write_addr),(cache_no+1));
 			}
 			
@@ -331,11 +334,12 @@ int read_request(string read_addr,int cache_no)
 							cache[cache_no].cacheset[INDEX1].dirty[LRU_replace]=false;
 							if(cache_no!=C_NUM-1)//check if it's the last cache
 							{
-								
+								cachep[cache_no].WRITE_BACKS++;
 								write_request(rep_addr,(cache_no+1));
 							}
 							else
 							{
+								cachep[cache_no].WRITE_BACKS++;
 								memory_traffic++;
 							}
 						    }
@@ -434,6 +438,7 @@ int main(int argc, char* argv[])
 				cachep[i].READS_MISSES=0;
 				cachep[i].WRITE=0;
 				cachep[i].WRITES_MISSES=0;
+				cachep[i].WRITE_BACKS=0;
 				
 		}
 	
@@ -526,6 +531,7 @@ int main(int argc, char* argv[])
 		cout<<"Write request: "<<cachep[i].WRITE<<endl;
 		cout<<"Read misses: "<<cachep[i].READS_MISSES<<endl;
 		cout<<"Write misses: "<<cachep[i].WRITES_MISSES<<endl;
+		cout<<"WRITE BACKS: "<<cachep[i].WRITE_BACKS<<endl;c
 	}	
 	
 	cout<<"Memory traffic "<<memory_traffic<<endl;
