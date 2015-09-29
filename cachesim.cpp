@@ -479,7 +479,6 @@ int main(int argc, char* argv[])
 			}
 	
 	caches_init();
-	
 	int hit;
 	ifstream trace_file(argv[7]);
 	string linebuffer;
@@ -507,9 +506,8 @@ int main(int argc, char* argv[])
 		
 		
 		//cout<<linebuffer<<endl;
-	}
-	
-		
+	}										 
+										 
 	for(int i=0;i<C_NUM;i++)
 	{
 		for(int j=0;j<cachep[i].SET_NO;j++)
@@ -517,8 +515,10 @@ int main(int argc, char* argv[])
 			cout<<"SET "<<j<<"     ";
 			for(int k=0;k<cachep[i].ASSOC;k++)
 			{
-				cout<<"   "<<cache[i].cacheset[j].TAG[k];
-				if(cache[i].cacheset[j].dirty[k]==true)
+				int z=find(cache[i].cacheset[j].LRU.begin(),cache[i].cacheset[j].LRU.end(),k)-cache[i].cacheset[j].LRU.begin();
+				
+				cout<<"   "<<cache[i].cacheset[j].TAG[z];
+				if(cache[i].cacheset[j].dirty[z]==true)
 					cout<<"  D";
 			} 
 			cout<<endl;
@@ -531,7 +531,7 @@ int main(int argc, char* argv[])
 		cout<<"Write request: "<<cachep[i].WRITE<<endl;
 		cout<<"Read misses: "<<cachep[i].READS_MISSES<<endl;
 		cout<<"Write misses: "<<cachep[i].WRITES_MISSES<<endl;
-		cout<<"WRITE BACKS: "<<cachep[i].WRITE_BACKS<<endl;c
+		cout<<"WRITE BACKS: "<<cachep[i].WRITE_BACKS<<endl;
 	}	
 	
 	cout<<"Memory traffic "<<memory_traffic<<endl;
