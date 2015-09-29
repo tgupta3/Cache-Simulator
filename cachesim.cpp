@@ -14,11 +14,12 @@
 
 using namespace std;
 
-int N=5;
+
 //#define BLOCK_NUM 32
 //#define TAGSIZE 16
 //#define C_NUM 2
 int C_NUM=2;
+int memory_traffic=0;
 
 struct cache_params{
 int SIZE,BLOCKSIZE,ASSOC,SET_NO,TAG_SIZE,INDEX_SIZE,BLOCK_OFFSET_BITS;
@@ -57,6 +58,7 @@ class victim_cache{
   
 vector<cache_e> cache;
 victim_cache victim[2];
+
 
 void caches_init()
 {
@@ -146,12 +148,22 @@ void write_request(string write_addr,int cache_no)
 							{	
 							write_request(rep_addr,(cache_no+1));    
 							}
+							else
+							{	
+								memory_traffic++;
+							}	
 							}
 						
 							if(cache_no!=C_NUM-1)//check if it's not the last cache
 							{
 							hit=read_request(bin2hex(write_addr),(cache_no+1));
 							}
+							
+							else
+							{
+								memory_traffic++;
+							}
+					
 							cache[cache_no].cacheset[INDEX1].dirty[LRU_replace]=true;
 							cache[cache_no].cacheset[INDEX1].valid[LRU_replace]=true;
 							cache[cache_no].cacheset[INDEX1].TAG[LRU_replace]=TAG;
@@ -198,6 +210,11 @@ void write_request(string write_addr,int cache_no)
 			cout<<"reading from catch "<<cache_no+1<<endl;
 			hit=read_request(bin2hex(write_addr),(cache_no+1));
 			}
+			
+			else
+			{
+				memory_traffic++;
+			}	
 			cache[cache_no].cacheset[INDEX1].dirty[assoc]=true;
 			cache[cache_no].cacheset[INDEX1].valid[assoc]=true;
 			cache[cache_no].cacheset[INDEX1].TAG[assoc]=TAG;
@@ -316,14 +333,22 @@ int read_request(string read_addr,int cache_no)
 							{
 								
 								write_request(rep_addr,(cache_no+1));
-							}	
 							}
-						
+							else
+							{
+								memory_traffic++;
+							}
+						    }
+							
 							if(cache_no!=C_NUM-1)
 							{//check if it's not the last cache
 							
 							hit=read_request(bin2hex(read_addr), (cache_no+1));
 							}
+							else
+							{
+								memory_traffic++;
+							}	
 							cache[cache_no].cacheset[INDEX1].dirty[LRU_replace]=false;
 							cache[cache_no].cacheset[INDEX1].valid[LRU_replace]=true;
 							cache[cache_no].cacheset[INDEX1].TAG[LRU_replace]=TAG;
@@ -346,6 +371,11 @@ int read_request(string read_addr,int cache_no)
 						cout<<"Sending read request "<<endl;
 						hit=read_request(bin2hex(read_addr),(cache_no+1));
 					}
+				else
+				{
+					memory_traffic++;
+				}
+			
 					cache[cache_no].cacheset[INDEX1].dirty[assoc]=false;
 					cache[cache_no].cacheset[INDEX1].valid[assoc]=true;
 					cache[cache_no].cacheset[INDEX1].TAG[assoc]=TAG;
@@ -366,6 +396,7 @@ int read_request(string read_addr,int cache_no)
 	
 }
 }
+	
 	
 				
 			
@@ -496,6 +527,8 @@ int main(int argc, char* argv[])
 		cout<<"Read misses: "<<cachep[i].READS_MISSES<<endl;
 		cout<<"Write misses: "<<cachep[i].WRITES_MISSES<<endl;
 	}	
+	
+	cout<<"Memory traffic "<<memory_traffic<<endl;
 	
 	
 	return 0;
