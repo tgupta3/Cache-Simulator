@@ -40,6 +40,7 @@ class cache_set{
 				vector<bool> valid;
 				vector<bool> dirty;
 				vector<int> LRU;
+				vector<string> victim_TAG;
 				
 		
 };
@@ -52,7 +53,7 @@ class cache_e{
 
 class victim_cache{
 			public:
-					cache_set vitcimset;
+					cache_set victimset;
 };
 
   
@@ -111,6 +112,7 @@ void write_request(string write_addr,int cache_no)
 	
 	TAG=bin2hex(TAG);
 	INDEX1=bin2dec(INDEX);
+	int victim_match_block;
 	
 	//assoc will give the block number of the valid bit, which is false
 	int assoc=find(cache[cache_no].cacheset[INDEX1].valid.begin(),cache[cache_no].cacheset[INDEX1].valid.end(),false)-cache[cache_no].cacheset[INDEX1].valid.begin();
@@ -121,6 +123,199 @@ void write_request(string write_addr,int cache_no)
 				if(TAG_match>=cache[cache_no].cacheset[INDEX1].TAG.size())  //Not in set& set is full																												 }
 				{
 						cachep[cache_no].WRITES_MISSES++;
+
+						//Victim Implementation for Write begins
+
+						if(victimp[cache_no].ASSOC!=0) //check if victim cache exist
+						{
+
+							string victim_search;
+							victim_search=write_addr.substr(0,(write_addr.length()-(cachep[cache_no].BLOCK_OFFSET_BITS)));
+							//cout<<"       VICTIM is "<<endl;
+
+							//cout<<victim_search<<endl;
+							cout<<bin2hex(victim_search)<<endl;
+
+							victim_match_block=find(victim[cache_no].victimset.victim_TAG.begin(),victim[cache_no].victimset.victim_TAG.end(),bin2hex(victim_search))-victim[cache_no].victimset.victim_TAG.begin();
+							int victim_assoc=find(victim[cache_no].victimset.valid.begin(),victim[cache_no].victimset.valid.end(),false)-victim[cache_no].victimset.valid.begin();
+							
+							if(victim_match_block>=victim[cache_no].victimset.victim_TAG.size()&&(victim_assoc>=victim[cache_no].victimset.valid.size())) //Not found in victim and victim is full
+							{
+								//find LRU, evict if not dirty, if dirty write to level 2
+
+								int victim_LRU_replace=	distance(victim[cache_no].victimset.LRU.begin(),max_element(victim[cache_no].victimset.LRU.begin(),victim[cache_no].victimset.LRU.end()));
+								bool victim_dirty_replace=victim[cache_no].victimset.dirty[victim_LRU_replace];
+								
+
+								if(victim_dirty_replace==true)
+								{
+									cout<<"VICTIM LRU Dirty for write request to cache0"<<endl;
+									
+									string victim_write_back=hex2bin(victim[cache_no].victimset.victim_TAG[victim_LRU_replace]);
+									victim_write_back.append(cachep[cache_no].BLOCK_OFFSET_BITS,'0');
+									victim_write_back=victim_write_back.substr(victim_write_back.length()-32);
+									victim_write_back=bin2hex(victim_write_back);
+
+									victim[cache_no].victimset.dirty[victim_LRU_replace]==false;
+
+									if(cache_no!=C_NUM-1)
+									{
+
+										write_request(victim_write_back,(cache_no+1));
+
+									}
+
+									else
+									{
+
+										memory_traffic++; //Last cache level, writing back to memory
+									}	
+
+								}	//write back to next level end here
+
+								if(cache_no!=C_NUM-1)
+								{
+
+									hit=read_request(bin2hex(write_addr),(cache_no+1));
+								}
+
+								else
+								{
+									memory_traffic++;
+								}	
+
+								LRU_replace=distance(cache[cache_no].cacheset[INDEX1].LRU.begin(),max_element(cache[cache_no].cacheset[INDEX1].LRU.begin(),cache[cache_no].cacheset[INDEX1].LRU.end()));
+								//finding LRU in cache level and sending it to victim
+
+								string victim_replace=hex2bin(cache[cache_no].cacheset[INDEX1].TAG[LRU_replace]);
+								victim_replace.append(INDEX);
+								victim_replace=victim_replace.substr(victim_replace.length()-32);
+								victim_replace=bin2hex(victim_replace);
+								victim[cache_no].victimset.victim_TAG[victim_LRU_replace]=victim_replace;
+								victim[cache_no].victimset.dirty[victim_LRU_replace]=cache[cache_no].cacheset[INDEX1].dirty[LRU_replace];
+								victim[cache_no].victimset.LRU[victim_LRU_replace]=0;
+								victim[cache_no].victimset.valid[victim_LRU_replace]=true;
+								//Update victim LRU's
+
+								for(int i=0;i<victim[cache_no].victimset.LRU.size();i++)
+								{
+									if(victim[cache_no].victimset.valid[i]==true&&(i!=victim_LRU_replace))
+											victim[cache_no].victimset.LRU[i]++;
+								}	
+
+								//Update L1 now
+
+								cache[cache_no].cacheset[INDEX1].dirty[LRU_replace]=true;
+								cache[cache_no].cacheset[INDEX1].valid[LRU_replace]=true;
+								cache[cache_no].cacheset[INDEX1].TAG[LRU_replace]=TAG;
+								cache[cache_no].cacheset[INDEX1].LRU[LRU_replace]=0;
+
+								for(int i=0;i<cache[cache_no].cacheset[INDEX1].LRU.size();i++)
+								{
+								if(cache[cache_no].cacheset[INDEX1].valid[i]==true&&(i!=LRU_replace))
+								{
+									cache[cache_no].cacheset[INDEX1].LRU[i]++;
+								}	
+								}		
+
+								//L1 write back completed
+
+
+							}
+
+							else if (victim_match_block>=victim[cache_no].victimset.victim_TAG.size()&&(victim_assoc<victim[cache_no].victimset.valid.size()))
+							{	//Not found, victim has space
+
+								LRU_replace=distance(cache[cache_no].cacheset[INDEX1].LRU.begin(),max_element(cache[cache_no].cacheset[INDEX1].LRU.begin(),cache[cache_no].cacheset[INDEX1].LRU.end()));
+								string victim_replace=hex2bin(cache[cache_no].cacheset[INDEX1].TAG[LRU_replace]);
+								victim_replace.append(INDEX);
+								victim_replace=victim_replace.substr(victim_replace.length()-32);
+								victim_replace=bin2hex(victim_replace);
+
+								for(int i=0;i<victim[cache_no].victimset.LRU.size();i++)  //updating LRU first for victim and then adding tag
+								{
+									if(victim[cache_no].victimset.valid[i]==true)
+										victim[cache_no].victimset.LRU[i]++;
+								}	
+								victim[cache_no].victimset.victim_TAG[victim_assoc]=victim_replace;
+								victim[cache_no].victimset.valid[victim_assoc]=true;
+								victim[cache_no].victimset.dirty[victim_assoc]=cache[cache_no].cacheset[INDEX1].dirty[LRU_replace];
+								victim[cache_no].victimset.LRU[victim_assoc]=0;
+
+								if(cache_no!=C_NUM-1)
+								{
+
+									hit=read_request(bin2hex(write_addr),(cache_no+1));
+								}
+								else
+								{
+
+									memory_traffic++;
+								}	
+
+								cache[cache_no].cacheset[INDEX1].dirty[LRU_replace]=true;
+								cache[cache_no].cacheset[INDEX1].valid[LRU_replace]=true;
+								cache[cache_no].cacheset[INDEX1].TAG[LRU_replace]=TAG;
+								cache[cache_no].cacheset[INDEX1].LRU[LRU_replace]=0;
+
+								for(int i=0;i<cache[cache_no].cacheset[INDEX1].LRU.size();i++)
+								{
+								if(cache[cache_no].cacheset[INDEX1].valid[i]==true&&(i!=LRU_replace))
+								{
+									cache[cache_no].cacheset[INDEX1].LRU[i]++;
+								}	
+								}	
+
+
+
+
+							}
+
+							else //found in victim
+							{
+								LRU_replace=distance(cache[cache_no].cacheset[INDEX1].LRU.begin(),max_element(cache[cache_no].cacheset[INDEX1].LRU.begin(),cache[cache_no].cacheset[INDEX1].LRU.end()));
+								string victim_replace=hex2bin(cache[cache_no].cacheset[INDEX1].TAG[LRU_replace]);
+								victim_replace.append(INDEX);
+								victim_replace=victim_replace.substr(victim_replace.length()-32);
+								victim_replace=bin2hex(victim_replace);
+								//repalacing tag;
+								string cache_replace=hex2bin(victim[cache_no].victimset.victim_TAG[victim_match_block]);
+								cache_replace=cache_replace.substr(0,(cache_replace.length()-cachep[cache_no].INDEX_SIZE));
+								cache_replace=bin2hex(cache_replace);
+								string temp_var;
+								victim[cache_no].victimset.victim_TAG[victim_match_block]=victim_replace;
+								cache[cache_no].cacheset[INDEX1].TAG[LRU_replace]=cache_replace;
+								bool dirty_temp=victim[cache_no].victimset.dirty[victim_match_block];
+								victim[cache_no].victimset.dirty[victim_match_block]=cache[cache_no].cacheset[INDEX1].dirty[LRU_replace];
+								cache[cache_no].cacheset[INDEX1].dirty[LRU_replace]=dirty_temp;
+
+								//swapping completed, updating LRU
+
+								for(int i=0;i<victim[cache_no].victimset.LRU.size();i++)
+								{
+									if(victim[cache_no].victimset.valid[i]==true&&(victim[cache_no].victimset.LRU[i]<victim[cache_no].victimset.LRU[victim_match_block]))
+											victim[cache_no].victimset.LRU[i]++;
+								}	
+								victim[cache_no].victimset.LRU[victim_match_block]=0;
+
+								cache[cache_no].cacheset[INDEX1].LRU[LRU_replace]=0;
+
+
+								for(int i=0;i<cache[cache_no].cacheset[INDEX1].LRU.size();i++)
+								{
+								if(cache[cache_no].cacheset[INDEX1].valid[i]==true&&(i!=LRU_replace))
+								{
+									cache[cache_no].cacheset[INDEX1].LRU[i]++;
+								}	
+								}		
+
+							} //found in victim ends
+
+						}//victim_present condition ends
+
+
+						else
+						{	
 						LRU_replace=distance(cache[cache_no].cacheset[INDEX1].LRU.begin(),max_element(cache[cache_no].cacheset[INDEX1].LRU.begin(),cache[cache_no].cacheset[INDEX1].LRU.end()));
 						dirty_replace=cache[cache_no].cacheset[INDEX1].dirty[LRU_replace];
 						cout<<"Write request,Set full,but dont have tag "<<bin2hex(write_addr)<<" Cache No : "<<cache_no<<endl;
@@ -176,9 +371,12 @@ void write_request(string write_addr,int cache_no)
 								{
 									cache[cache_no].cacheset[INDEX1].LRU[i]++;
 								}	
+						
 							}	
-					
+						}					
+				
 				}
+
 				
 				else   //In set, set is full
 				{
@@ -274,6 +472,7 @@ int read_request(string read_addr,int cache_no)
 	INDEX=read_addr.substr(TAG.length(),cachep[cache_no].INDEX_SIZE);
 	TAG=bin2hex(TAG);
 	
+	int victim_match_block;
 	INDEX1=bin2dec(INDEX);
 	
 	//assoc will give the block number of the valid bit, which is false
@@ -303,12 +502,219 @@ int read_request(string read_addr,int cache_no)
 		return 1; //it's a hit
 	}
 	
+	
 	else//tag doesn't match
 	{
-		
+	
 		cachep[cache_no].READS_MISSES++;
-		if(assoc>=cache[cache_no].cacheset[INDEX1].valid.size())//set is full & tag doesn'match->perform eviction
+		if(assoc>=cache[cache_no].cacheset[INDEX1].valid.size())//set is full & tag doesn'match->check in victim
 				{
+						if(victimp[cache_no].ASSOC!=0) //check if victim cache exist
+						{
+							cout<<"Entering victim"<<endl;
+							string victim_search;
+							victim_search=read_addr.substr(0,(read_addr.length()-(cachep[cache_no].BLOCK_OFFSET_BITS)));
+							//cout<<"       VICTIM is "<<endl;
+
+							//cout<<victim_search<<endl;
+							cout<<bin2hex(victim_search)<<endl;
+
+							victim_match_block=find(victim[cache_no].victimset.victim_TAG.begin(),victim[cache_no].victimset.victim_TAG.end(),bin2hex(victim_search))-victim[cache_no].victimset.victim_TAG.begin();
+							//cout<<"victim match"<<victim_match_block<<endl;
+							//cout<<"Victim size"<<victim[cache_no].victimset.victim_TAG.size()<<endl;
+
+
+							int victim_assoc=find(victim[cache_no].victimset.valid.begin(),victim[cache_no].victimset.valid.end(),false)-victim[cache_no].victimset.valid.begin();
+							cout<<"Victim_First_invalid="<<victim_assoc<<endl;
+							cout<<"Victim match block "<<victim_match_block<<endl;
+							if(victim_match_block>=victim[cache_no].victimset.victim_TAG.size()&&(victim_assoc>=victim[cache_no].victimset.valid.size())) //Not found in victim
+							{
+								
+								//find LRU, evict if not dirty, if dirty write to level 2
+								
+								int victim_LRU_replace=	distance(victim[cache_no].victimset.LRU.begin(),(max_element(victim[cache_no].victimset.LRU.begin(),victim[cache_no].victimset.LRU.end())));
+								//cout<<"victim Lru "<<victim[0].victimset.victim_TAG[0]<<endl;
+								bool victim_dirty_replace=victim[cache_no].victimset.dirty[victim_LRU_replace];
+								
+								cout<<"victim dirty working"<<endl;
+								if(victim_dirty_replace==true)
+								{
+									cout<<"VICTIM LRU Dirty for write request to cache0"<<endl;
+									
+									string victim_write_back=hex2bin(victim[cache_no].victimset.victim_TAG[victim_LRU_replace]);
+									victim_write_back.append(cachep[cache_no].BLOCK_OFFSET_BITS,'0');
+									victim_write_back=victim_write_back.substr(victim_write_back.length()-32);
+									victim_write_back=bin2hex(victim_write_back);
+
+									victim[cache_no].victimset.dirty[victim_LRU_replace]==false;
+
+									if(cache_no!=C_NUM-1)
+									{
+
+										write_request(victim_write_back,(cache_no+1));
+
+									}
+
+									else
+									{
+
+										memory_traffic++; //Last cache level, writing back to memory
+									}	
+
+								}	//write back to next level end here
+
+								if(cache_no!=C_NUM-1)
+								{
+
+									hit=read_request(bin2hex(read_addr),(cache_no+1));
+								}
+
+								else
+								{
+									memory_traffic++;
+								}	
+
+								LRU_replace=distance(cache[cache_no].cacheset[INDEX1].LRU.begin(),max_element(cache[cache_no].cacheset[INDEX1].LRU.begin(),cache[cache_no].cacheset[INDEX1].LRU.end()));
+								//finding LRU in cache level and sending it to victim
+
+								string victim_replace=hex2bin(cache[cache_no].cacheset[INDEX1].TAG[LRU_replace]);
+								victim_replace.append(INDEX);
+								victim_replace=victim_replace.substr(victim_replace.length()-32);
+								victim_replace=bin2hex(victim_replace);
+								victim[cache_no].victimset.victim_TAG[victim_LRU_replace]=victim_replace;
+								victim[cache_no].victimset.dirty[victim_LRU_replace]=cache[cache_no].cacheset[INDEX1].dirty[LRU_replace];
+								victim[cache_no].victimset.LRU[victim_LRU_replace]=0;
+								victim[cache_no].victimset.valid[victim_LRU_replace]=true;
+								//Update victim LRU's
+
+								for(int i=0;i<victim[cache_no].victimset.LRU.size();i++)
+								{
+									if(victim[cache_no].victimset.valid[i]==true&&(i!=victim_LRU_replace))
+											victim[cache_no].victimset.LRU[i]++;
+								}	
+
+								//Update L1 now
+
+								cache[cache_no].cacheset[INDEX1].dirty[LRU_replace]=false;
+								cache[cache_no].cacheset[INDEX1].valid[LRU_replace]=true;
+								cache[cache_no].cacheset[INDEX1].TAG[LRU_replace]=TAG;
+								cache[cache_no].cacheset[INDEX1].LRU[LRU_replace]=0;
+
+								for(int i=0;i<cache[cache_no].cacheset[INDEX1].LRU.size();i++)
+								{
+								if(cache[cache_no].cacheset[INDEX1].valid[i]==true&&(i!=LRU_replace))
+								{
+									cache[cache_no].cacheset[INDEX1].LRU[i]++;
+								}	
+								}		
+
+								//L1 write back completed
+
+
+							}
+
+
+
+							else if (victim_match_block>=victim[cache_no].victimset.victim_TAG.size()&&(victim_assoc<victim[cache_no].victimset.valid.size()))
+							{	//Not found, victim has space
+
+								cout<<"Not found and victim has space"<<endl;
+								LRU_replace=distance(cache[cache_no].cacheset[INDEX1].LRU.begin(),max_element(cache[cache_no].cacheset[INDEX1].LRU.begin(),cache[cache_no].cacheset[INDEX1].LRU.end()));
+								string victim_replace=hex2bin(cache[cache_no].cacheset[INDEX1].TAG[LRU_replace]);
+								cout<<"Victim_repalce"<<victim_replace<<endl;
+								victim_replace.append(INDEX);
+								cout<<"Victim_repalce"<<victim_replace<<endl;
+								victim_replace=victim_replace.substr(victim_replace.length()-32);
+								cout<<"Victim_repalce"<<victim_replace<<endl;
+								victim_replace=bin2hex(victim_replace);
+								cout<<"Victim_repalce"<<victim_replace<<endl;
+
+								for(int i=0;i<victim[cache_no].victimset.LRU.size();i++)  //updating LRU first for victim and then adding tag
+								{
+									if(victim[cache_no].victimset.valid[i]==true)
+										victim[cache_no].victimset.LRU[i]++;
+								}	
+								victim[cache_no].victimset.victim_TAG[victim_assoc]=victim_replace;
+								victim[cache_no].victimset.valid[victim_assoc]=true;
+								victim[cache_no].victimset.dirty[victim_assoc]=cache[cache_no].cacheset[INDEX1].dirty[LRU_replace];
+								victim[cache_no].victimset.LRU[victim_assoc]=0;
+
+								if(cache_no!=C_NUM-1)
+								{
+
+									hit=read_request(bin2hex(read_addr),(cache_no+1));
+								}
+								else
+								{
+
+									memory_traffic++;
+								}	
+
+								cache[cache_no].cacheset[INDEX1].dirty[LRU_replace]=false;
+								cache[cache_no].cacheset[INDEX1].valid[LRU_replace]=true;
+								cache[cache_no].cacheset[INDEX1].TAG[LRU_replace]=TAG;
+								cache[cache_no].cacheset[INDEX1].LRU[LRU_replace]=0;
+
+								for(int i=0;i<cache[cache_no].cacheset[INDEX1].LRU.size();i++)
+								{
+								if(cache[cache_no].cacheset[INDEX1].valid[i]==true&&(i!=LRU_replace))
+								{
+									cache[cache_no].cacheset[INDEX1].LRU[i]++;
+								}	
+								}	
+
+
+
+
+							}
+
+							else //found in victim
+							{
+								LRU_replace=distance(cache[cache_no].cacheset[INDEX1].LRU.begin(),max_element(cache[cache_no].cacheset[INDEX1].LRU.begin(),cache[cache_no].cacheset[INDEX1].LRU.end()));
+								string victim_replace=hex2bin(cache[cache_no].cacheset[INDEX1].TAG[LRU_replace]);
+								victim_replace.append(INDEX);
+								victim_replace=victim_replace.substr(victim_replace.length()-32);
+								victim_replace=bin2hex(victim_replace);
+
+								//repalacing tag;
+								string cache_replace=hex2bin(victim[cache_no].victimset.victim_TAG[victim_match_block]);
+								cache_replace=cache_replace.substr(0,(cache_replace.length()-cachep[cache_no].INDEX_SIZE));
+								cache_replace=bin2hex(cache_replace);
+								string temp_var;
+								victim[cache_no].victimset.victim_TAG[victim_match_block]=victim_replace;
+								cache[cache_no].cacheset[INDEX1].TAG[LRU_replace]=cache_replace;
+								bool dirty_temp=victim[cache_no].victimset.dirty[victim_match_block];
+								victim[cache_no].victimset.dirty[victim_match_block]=cache[cache_no].cacheset[INDEX1].dirty[LRU_replace];
+								cache[cache_no].cacheset[INDEX1].dirty[LRU_replace]=dirty_temp;
+
+								//swapping completed, updating LRU
+
+								for(int i=0;i<victim[cache_no].victimset.LRU.size();i++)
+								{
+									if(victim[cache_no].victimset.valid[i]==true&&(victim[cache_no].victimset.LRU[i]<victim[cache_no].victimset.LRU[victim_match_block]))
+											victim[cache_no].victimset.LRU[i]++;
+								}	
+								victim[cache_no].victimset.LRU[victim_match_block]=0;
+
+								cache[cache_no].cacheset[INDEX1].LRU[LRU_replace]=0;
+
+
+								for(int i=0;i<cache[cache_no].cacheset[INDEX1].LRU.size();i++)
+								{
+								if(cache[cache_no].cacheset[INDEX1].valid[i]==true&&(i!=LRU_replace))
+								{
+									cache[cache_no].cacheset[INDEX1].LRU[i]++;
+								}	
+								}		
+
+							} //found in victim ends
+
+						}
+
+
+						else
+						{	
+
 						cout<<"Read request,Tag No Match, Set full "<<bin2hex(read_addr)<<" Cache No : "<<cache_no<<endl;
 						LRU_replace=distance(cache[cache_no].cacheset[INDEX1].LRU.begin(),max_element(cache[cache_no].cacheset[INDEX1].LRU.begin(),cache[cache_no].cacheset[INDEX1].LRU.end()));
 						dirty_replace=cache[cache_no].cacheset[INDEX1].dirty[LRU_replace];
@@ -364,9 +770,9 @@ int read_request(string read_addr,int cache_no)
 									cache[cache_no].cacheset[INDEX1].LRU[i]++;
 								}	
 							}
-			  	 
+						}
 				return 1;		
-		    }
+		    } 
 		else //tag doesn't match and there is space
 			{
 					cout<<"Read request,Tag No Match, Set Space "<<bin2hex(read_addr)<<" Cache No : "<<cache_no<<endl;	
@@ -420,8 +826,7 @@ int main(int argc, char* argv[])
 		
 		victimp[0].BLOCKSIZE=atoi(argv[1]);
 		victimp[1].BLOCKSIZE=0;
-		victimp[0].ASSOC=atoi(argv[4]);
-		victimp[1].ASSOC=0;
+		
 		
 		cachep.resize(C_NUM);
 		
@@ -440,9 +845,23 @@ int main(int argc, char* argv[])
 				cachep[i].WRITES_MISSES=0;
 				cachep[i].WRITE_BACKS=0;
 				
+				
 		}
-	
-		
+	//Manually VICTIM initialization
+
+		victimp[0].BLOCKSIZE=atoi(argv[1]);
+		victimp[1].BLOCKSIZE=0;
+		victimp[0].SET_NO=1;
+		victimp[1].SET_NO=0;
+		victimp[0].ASSOC=atoi(argv[4]);
+		victimp[1].ASSOC=0;
+		victim[0].victimset.victim_TAG.resize(victimp[0].ASSOC);
+		victim[0].victimset.LRU.resize(victimp[0].ASSOC);
+		victim[0].victimset.dirty.resize(victimp[0].ASSOC);
+		victim[0].victimset.valid.resize(victimp[0].ASSOC);
+
+	//VIctim Initialization ended	
+
 		for(int i=0;i<C_NUM;i++)
 		{
 				cout<<cachep[i].BLOCKSIZE<<endl;
@@ -451,7 +870,9 @@ int main(int argc, char* argv[])
 				cout<<cachep[i].SET_NO<<endl;
 				cout<<cachep[i].INDEX_SIZE<<endl;
 				cout<<cachep[i].BLOCK_OFFSET_BITS<<endl;
-				
+				cout<<victimp[i].SET_NO<<endl;
+				cout<<victimp[i].ASSOC<<endl;
+
 				
 		}
 		
@@ -483,7 +904,7 @@ int main(int argc, char* argv[])
 	ifstream trace_file(argv[7]);
 	string linebuffer;
 	string rw;
-	
+	int count=0;
 
 	while(trace_file && getline(trace_file, linebuffer)){
 		
@@ -492,15 +913,20 @@ int main(int argc, char* argv[])
 		linebuffer=trace_address(linebuffer.substr(2));
 		if(rw[0]=='w')
 		{
+			count++;
+			cout<<"Iteration number= "<<count;
 			cout<<"Sending write request to cache0 for Address "<<linebuffer<<endl;
 			
 			write_request(linebuffer,0);
 		}
 		if(rw[0]=='r')
 		{	
+			count++;
+			cout<<"Iteration number= "<<count;
 			cout<<"Sending read request to cache0 for Address "<<linebuffer<<endl;
 			
 			hit=read_request(linebuffer,0);
+
 		}
 		//write_request(linebuffer,1);
 		
@@ -508,6 +934,19 @@ int main(int argc, char* argv[])
 		//cout<<linebuffer<<endl;
 	}										 
 										 
+	cout<<"Hi";
+	cout<<"Victim=   "; 
+	//int z=find(victim[0].victimset.LRU.begin(),victim[0].victimset.LRU.end(),2)-victim[0].victimset.LRU.begin();
+	//cout<<victim[0].victimset.LRU[5]<<endl;
+
+
+	for(int i=0;i<victimp[0].ASSOC;i++)
+	{
+		int z=find(victim[0].victimset.LRU.begin(),victim[0].victimset.LRU.end(),i)-victim[0].victimset.LRU.begin();
+		cout<<"   "<<victim[0].victimset.victim_TAG[z];
+	}
+	
+	cout<<endl;
 	for(int i=0;i<C_NUM;i++)
 	{
 		for(int j=0;j<cachep[i].SET_NO;j++)
