@@ -129,6 +129,7 @@ void write_request(string write_addr,int cache_no)
 						if(victimp[cache_no].ASSOC!=0) //check if victim cache exist
 						{
 
+							victimp[cache_no].SWAP_RATE++;
 							string victim_search;
 							victim_search=write_addr.substr(0,(write_addr.length()-(cachep[cache_no].BLOCK_OFFSET_BITS)));
 							//cout<<"       VICTIM is "<<endl;
@@ -161,13 +162,14 @@ void write_request(string write_addr,int cache_no)
 									if(cache_no!=C_NUM-1)
 									{
 
+										cachep[cache_no].WRITE_BACKS++;
 										write_request(victim_write_back,(cache_no+1));
 
 									}
 
 									else
 									{
-
+										cachep[cache_no].WRITE_BACKS++;
 										memory_traffic++; //Last cache level, writing back to memory
 									}	
 
@@ -273,6 +275,7 @@ void write_request(string write_addr,int cache_no)
 
 							else //found in victim
 							{
+								victimp[cache_no].SWAP_NO++;
 								LRU_replace=distance(cache[cache_no].cacheset[INDEX1].LRU.begin(),max_element(cache[cache_no].cacheset[INDEX1].LRU.begin(),cache[cache_no].cacheset[INDEX1].LRU.end()));
 								string victim_replace=hex2bin(cache[cache_no].cacheset[INDEX1].TAG[LRU_replace]);
 								victim_replace.append(INDEX);
@@ -511,6 +514,7 @@ int read_request(string read_addr,int cache_no)
 				{
 						if(victimp[cache_no].ASSOC!=0) //check if victim cache exist
 						{
+							victimp[cache_no].SWAP_RATE++;
 							cout<<"Entering victim"<<endl;
 							string victim_search;
 							victim_search=read_addr.substr(0,(read_addr.length()-(cachep[cache_no].BLOCK_OFFSET_BITS)));
@@ -670,6 +674,7 @@ int read_request(string read_addr,int cache_no)
 
 							else //found in victim
 							{
+								victimp[cache_no].SWAP_NO++;
 								LRU_replace=distance(cache[cache_no].cacheset[INDEX1].LRU.begin(),max_element(cache[cache_no].cacheset[INDEX1].LRU.begin(),cache[cache_no].cacheset[INDEX1].LRU.end()));
 								string victim_replace=hex2bin(cache[cache_no].cacheset[INDEX1].TAG[LRU_replace]);
 								victim_replace.append(INDEX);
@@ -844,6 +849,8 @@ int main(int argc, char* argv[])
 				cachep[i].WRITE=0;
 				cachep[i].WRITES_MISSES=0;
 				cachep[i].WRITE_BACKS=0;
+				victimp[i].SWAP_RATE=0;
+				victimp[i].SWAP_NO=0;
 				
 				
 		}
@@ -934,8 +941,8 @@ int main(int argc, char* argv[])
 		//cout<<linebuffer<<endl;
 	}										 
 										 
-	cout<<"Hi";
-	cout<<"Victim=   "; 
+	//cout<<"Hi";
+	//cout<<"Victim=   "; 
 	//int z=find(victim[0].victimset.LRU.begin(),victim[0].victimset.LRU.end(),2)-victim[0].victimset.LRU.begin();
 	//cout<<victim[0].victimset.LRU[5]<<endl;
 
@@ -971,6 +978,8 @@ int main(int argc, char* argv[])
 		cout<<"Read misses: "<<cachep[i].READS_MISSES<<endl;
 		cout<<"Write misses: "<<cachep[i].WRITES_MISSES<<endl;
 		cout<<"WRITE BACKS: "<<cachep[i].WRITE_BACKS<<endl;
+		cout<<"SWAP Rate: "<<victimp[0].SWAP_RATE<<endl;
+		cout<<"No. of swaps: "<<victimp[0].SWAP_NO<<endl;
 	}	
 	
 	cout<<"Memory traffic "<<memory_traffic<<endl;
