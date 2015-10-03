@@ -291,7 +291,7 @@ void write_request(string write_addr,int cache_no)
 								cache[cache_no].cacheset[INDEX1].TAG[LRU_replace]=cache_replace;
 								bool dirty_temp=victim[cache_no].victimset.dirty[victim_match_block];
 								victim[cache_no].victimset.dirty[victim_match_block]=cache[cache_no].cacheset[INDEX1].dirty[LRU_replace];
-								cache[cache_no].cacheset[INDEX1].dirty[LRU_replace]=1;
+								cache[cache_no].cacheset[INDEX1].dirty[LRU_replace]=true;
 
 								//swapping completed, updating LRU
 
