@@ -8,7 +8,7 @@
 #include<bitset>
 #include<math.h>
 #include<algorithm>
-#include <cstddef> 
+#include<cstddef> 
 #include<iterator>
 
 
@@ -275,6 +275,7 @@ void write_request(string write_addr,int cache_no)
 
 							else //found in victim
 							{
+								cout<<"Victim Hit  "<<TAG<<endl;
 								victimp[cache_no].SWAP_NO++;
 								LRU_replace=distance(cache[cache_no].cacheset[INDEX1].LRU.begin(),max_element(cache[cache_no].cacheset[INDEX1].LRU.begin(),cache[cache_no].cacheset[INDEX1].LRU.end()));
 								string victim_replace=hex2bin(cache[cache_no].cacheset[INDEX1].TAG[LRU_replace]);
@@ -290,7 +291,7 @@ void write_request(string write_addr,int cache_no)
 								cache[cache_no].cacheset[INDEX1].TAG[LRU_replace]=cache_replace;
 								bool dirty_temp=victim[cache_no].victimset.dirty[victim_match_block];
 								victim[cache_no].victimset.dirty[victim_match_block]=cache[cache_no].cacheset[INDEX1].dirty[LRU_replace];
-								cache[cache_no].cacheset[INDEX1].dirty[LRU_replace]=dirty_temp;
+								cache[cache_no].cacheset[INDEX1].dirty[LRU_replace]=1;
 
 								//swapping completed, updating LRU
 
@@ -552,16 +553,17 @@ int read_request(string read_addr,int cache_no)
 
 									victim[cache_no].victimset.dirty[victim_LRU_replace]==false;
 
-									if(cache_no!=C_NUM-1)
+									if(cache_no!=C_NUM-1) //if it's not the last cache 
 									{
 
+										cachep[cache_no].WRITE_BACKS++;
 										write_request(victim_write_back,(cache_no+1));
 
 									}
 
 									else
 									{
-
+										cachep[cache_no].WRITE_BACKS++;
 										memory_traffic++; //Last cache level, writing back to memory
 									}	
 
@@ -951,6 +953,8 @@ int main(int argc, char* argv[])
 	{
 		int z=find(victim[0].victimset.LRU.begin(),victim[0].victimset.LRU.end(),i)-victim[0].victimset.LRU.begin();
 		cout<<"   "<<victim[0].victimset.victim_TAG[z];
+		if(victim[0].victimset.dirty[z]==true)
+			cout<< " D";
 	}
 	
 	cout<<endl;
