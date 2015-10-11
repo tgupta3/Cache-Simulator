@@ -1,4 +1,5 @@
 #include<iostream>
+#include<iomanip>
 #include<string>
 #include<vector>
 #include<cstring>
@@ -23,8 +24,9 @@ int memory_traffic=0;
 
 struct cache_params{
 int SIZE,BLOCKSIZE,ASSOC,SET_NO,TAG_SIZE,INDEX_SIZE,BLOCK_OFFSET_BITS;
-				int READS,READS_MISSES,WRITE,WRITES_MISSES,SWAP_REQUEST,WRITE_BACKS;
+				int READS,READS_MISSES,WRITE,WRITES_MISSES,WRITE_BACKS;
 				int SWAP_RATE,SWAP_NO;
+				float SWAP_REQUEST,MISS_RATE;
 				
 };
 
@@ -67,13 +69,15 @@ void caches_init()
 	{
 		for(int j=0;j<cachep[i].SET_NO;j++)
 		{
+			cache[i].cacheset[j].LRU[0]=0;
 			for(int k=0;k<cachep[i].ASSOC;k++)
 			{
 				cache[i].cacheset[j].TAG[k]='x';
-				cache[i].cacheset[j].LRU[k]=0;
+				cache[i].cacheset[j].LRU[k]=k;
 				cache[i].cacheset[j].valid[k]=false;
 				cache[i].cacheset[j].dirty[k]=false;
 			}
+			
 		}
 	}
 	/*for(int i=0;i<C_NUM;i++)
@@ -135,7 +139,7 @@ void write_request(string write_addr,int cache_no)
 							//cout<<"       VICTIM is "<<endl;
 
 							//cout<<victim_search<<endl;
-							cout<<bin2hex(victim_search)<<endl;
+							//cout<<bin2hex(victim_search)<<endl;
 
 							victim_match_block=find(victim[cache_no].victimset.victim_TAG.begin(),victim[cache_no].victimset.victim_TAG.end(),bin2hex(victim_search))-victim[cache_no].victimset.victim_TAG.begin();
 							int victim_assoc=find(victim[cache_no].victimset.valid.begin(),victim[cache_no].victimset.valid.end(),false)-victim[cache_no].victimset.valid.begin();
@@ -150,7 +154,7 @@ void write_request(string write_addr,int cache_no)
 
 								if(victim_dirty_replace==true)
 								{
-									cout<<"VICTIM LRU Dirty for write request to cache0"<<endl;
+									//cout<<"VICTIM LRU Dirty for write request to cache0"<<endl;
 									
 									string victim_write_back=hex2bin(victim[cache_no].victimset.victim_TAG[victim_LRU_replace]);
 									victim_write_back.append(cachep[cache_no].BLOCK_OFFSET_BITS,'0');
@@ -275,7 +279,7 @@ void write_request(string write_addr,int cache_no)
 
 							else //found in victim
 							{
-								cout<<"Victim Hit  "<<TAG<<endl;
+								//cout<<"Victim Hit  "<<TAG<<endl;
 								victimp[cache_no].SWAP_NO++;
 								LRU_replace=distance(cache[cache_no].cacheset[INDEX1].LRU.begin(),max_element(cache[cache_no].cacheset[INDEX1].LRU.begin(),cache[cache_no].cacheset[INDEX1].LRU.end()));
 								string victim_replace=hex2bin(cache[cache_no].cacheset[INDEX1].TAG[LRU_replace]);
@@ -322,7 +326,7 @@ void write_request(string write_addr,int cache_no)
 						{	
 						LRU_replace=distance(cache[cache_no].cacheset[INDEX1].LRU.begin(),max_element(cache[cache_no].cacheset[INDEX1].LRU.begin(),cache[cache_no].cacheset[INDEX1].LRU.end()));
 						dirty_replace=cache[cache_no].cacheset[INDEX1].dirty[LRU_replace];
-						cout<<"Write request,Set full,but dont have tag "<<bin2hex(write_addr)<<" Cache No : "<<cache_no<<endl;
+						//cout<<"Write request,Set full,but dont have tag "<<bin2hex(write_addr)<<" Cache No : "<<cache_no<<endl;
 						if(dirty_replace==true)    //perform a write request to next level
  						   {
 							/*if(cache[cache_no].cacheset[INDEX1].TAG[LRU_replace].length()==8)
@@ -330,19 +334,19 @@ void write_request(string write_addr,int cache_no)
 							else*/
 							rep_addr.append(hex2bin(cache[cache_no].cacheset[INDEX1].TAG[LRU_replace]));
 							
-							cout<<rep_addr<<endl;
+							//cout<<rep_addr<<endl;
 							rep_addr.append(INDEX);
-							cout<<' ' <<INDEX<<endl;
+							//cout<<' ' <<INDEX<<endl;
 							
 							rep_addr.append(cachep[cache_no].BLOCK_OFFSET_BITS,'0');//add random block bits
 							
 							
 							rep_addr=rep_addr.substr(rep_addr.length()-32);
 							rep_addr=bin2hex(rep_addr);
-							cout<<rep_addr<<endl;
+							//cout<<rep_addr<<endl;
 				
 							cache[cache_no].cacheset[INDEX1].dirty[LRU_replace]=false;
-							cout<<"performing write to next level coz dirty bit"<<endl;
+							//cout<<"performing write to next level coz dirty bit"<<endl;
 							if(cache_no!=C_NUM-1)//check if it's not  the last cache
 							{	
 								cachep[cache_no].WRITE_BACKS++;
@@ -384,7 +388,7 @@ void write_request(string write_addr,int cache_no)
 				
 				else   //In set, set is full
 				{
-					cout<<"Write request,Set full,but have tag "<<bin2hex(write_addr)<<" Cache No : "<<cache_no<<endl;
+					//cout<<"Write request,Set full,but have tag "<<bin2hex(write_addr)<<" Cache No : "<<cache_no<<endl;
 					cache[cache_no].cacheset[INDEX1].dirty[TAG_match]=true;
 					cache[cache_no].cacheset[INDEX1].valid[TAG_match]=true;
 					cache[cache_no].cacheset[INDEX1].TAG[TAG_match]=TAG;
@@ -408,10 +412,10 @@ void write_request(string write_addr,int cache_no)
 		if(TAG_match>=cache[cache_no].cacheset[INDEX1].TAG.size()) //set is not full,and doesn't have the particular element
 		{
 			cachep[cache_no].WRITES_MISSES++;
-			cout<<"Write request,Set not full,but doesn't have tag "<<bin2hex(write_addr)<<" Cache No : "<<cache_no<<endl;
+			//cout<<"Write request,Set not full,but doesn't have tag "<<bin2hex(write_addr)<<" Cache No : "<<cache_no<<endl;
 			if(cache_no!=C_NUM-1)//check if it's the last cache
 			{	
-			cout<<"reading from catch "<<cache_no+1<<endl;
+			//cout<<"reading from catch "<<cache_no+1<<endl;
 				
 			hit=read_request(bin2hex(write_addr),(cache_no+1));
 			}
@@ -436,7 +440,7 @@ void write_request(string write_addr,int cache_no)
 		else //set is not full and have a particular element
 		
 		{
-					cout<<"Write request,Set not full,but have tag "<<bin2hex(write_addr)<<" Cache No : "<<cache_no<<endl;
+					//cout<<"Write request,Set not full,but have tag "<<bin2hex(write_addr)<<" Cache No : "<<cache_no<<endl;
 					cache[cache_no].cacheset[INDEX1].dirty[TAG_match]=true;
 					cache[cache_no].cacheset[INDEX1].valid[TAG_match]=true;
 					cache[cache_no].cacheset[INDEX1].TAG[TAG_match]=TAG;	
@@ -493,7 +497,7 @@ int read_request(string read_addr,int cache_no)
 	
 	if(TAG_match!=-1)  //Tag match
 	{
-		cout<<"Read request,Tag Match, Set may or may not be empty  "<<bin2hex(read_addr)<<" Cache No : "<<cache_no<<endl;
+		//cout<<"Read request,Tag Match, Set may or may not be empty  "<<bin2hex(read_addr)<<" Cache No : "<<cache_no<<endl;
 		cache[cache_no].cacheset[INDEX1].valid[TAG_match]=true;
 		cache[cache_no].cacheset[INDEX1].TAG[TAG_match]=TAG;
 		for(int i=0;i<cache[cache_no].cacheset[INDEX1].LRU.size();i++)
@@ -516,13 +520,13 @@ int read_request(string read_addr,int cache_no)
 						if(victimp[cache_no].ASSOC!=0) //check if victim cache exist
 						{
 							victimp[cache_no].SWAP_RATE++;
-							cout<<"Entering victim"<<endl;
+							//cout<<"Entering victim"<<endl;
 							string victim_search;
 							victim_search=read_addr.substr(0,(read_addr.length()-(cachep[cache_no].BLOCK_OFFSET_BITS)));
 							//cout<<"       VICTIM is "<<endl;
 
 							//cout<<victim_search<<endl;
-							cout<<bin2hex(victim_search)<<endl;
+							//cout<<bin2hex(victim_search)<<endl;
 
 							victim_match_block=find(victim[cache_no].victimset.victim_TAG.begin(),victim[cache_no].victimset.victim_TAG.end(),bin2hex(victim_search))-victim[cache_no].victimset.victim_TAG.begin();
 							//cout<<"victim match"<<victim_match_block<<endl;
@@ -530,8 +534,8 @@ int read_request(string read_addr,int cache_no)
 
 
 							int victim_assoc=find(victim[cache_no].victimset.valid.begin(),victim[cache_no].victimset.valid.end(),false)-victim[cache_no].victimset.valid.begin();
-							cout<<"Victim_First_invalid="<<victim_assoc<<endl;
-							cout<<"Victim match block "<<victim_match_block<<endl;
+							//cout<<"Victim_First_invalid="<<victim_assoc<<endl;
+							//cout<<"Victim match block "<<victim_match_block<<endl;
 							if(victim_match_block>=victim[cache_no].victimset.victim_TAG.size()&&(victim_assoc>=victim[cache_no].victimset.valid.size())) //Not found in victim
 							{
 								
@@ -541,10 +545,10 @@ int read_request(string read_addr,int cache_no)
 								//cout<<"victim Lru "<<victim[0].victimset.victim_TAG[0]<<endl;
 								bool victim_dirty_replace=victim[cache_no].victimset.dirty[victim_LRU_replace];
 								
-								cout<<"victim dirty working"<<endl;
+								//cout<<"victim dirty working"<<endl;
 								if(victim_dirty_replace==true)
 								{
-									cout<<"VICTIM LRU Dirty for write request to cache0"<<endl;
+									//cout<<"VICTIM LRU Dirty for write request to cache0"<<endl;
 									
 									string victim_write_back=hex2bin(victim[cache_no].victimset.victim_TAG[victim_LRU_replace]);
 									victim_write_back.append(cachep[cache_no].BLOCK_OFFSET_BITS,'0');
@@ -624,16 +628,16 @@ int read_request(string read_addr,int cache_no)
 							else if (victim_match_block>=victim[cache_no].victimset.victim_TAG.size()&&(victim_assoc<victim[cache_no].victimset.valid.size()))
 							{	//Not found, victim has space
 
-								cout<<"Not found and victim has space"<<endl;
+								//cout<<"Not found and victim has space"<<endl;
 								LRU_replace=distance(cache[cache_no].cacheset[INDEX1].LRU.begin(),max_element(cache[cache_no].cacheset[INDEX1].LRU.begin(),cache[cache_no].cacheset[INDEX1].LRU.end()));
 								string victim_replace=hex2bin(cache[cache_no].cacheset[INDEX1].TAG[LRU_replace]);
-								cout<<"Victim_repalce"<<victim_replace<<endl;
+								//cout<<"Victim_repalce"<<victim_replace<<endl;
 								victim_replace.append(INDEX);
-								cout<<"Victim_repalce"<<victim_replace<<endl;
+								//cout<<"Victim_repalce"<<victim_replace<<endl;
 								victim_replace=victim_replace.substr(victim_replace.length()-32);
-								cout<<"Victim_repalce"<<victim_replace<<endl;
+								//cout<<"Victim_repalce"<<victim_replace<<endl;
 								victim_replace=bin2hex(victim_replace);
-								cout<<"Victim_repalce"<<victim_replace<<endl;
+								//cout<<"Victim_repalce"<<victim_replace<<endl;
 
 								for(int i=0;i<victim[cache_no].victimset.LRU.size();i++)  //updating LRU first for victim and then adding tag
 								{
@@ -722,7 +726,7 @@ int read_request(string read_addr,int cache_no)
 						else
 						{	
 
-						cout<<"Read request,Tag No Match, Set full "<<bin2hex(read_addr)<<" Cache No : "<<cache_no<<endl;
+						//cout<<"Read request,Tag No Match, Set full "<<bin2hex(read_addr)<<" Cache No : "<<cache_no<<endl;
 						LRU_replace=distance(cache[cache_no].cacheset[INDEX1].LRU.begin(),max_element(cache[cache_no].cacheset[INDEX1].LRU.begin(),cache[cache_no].cacheset[INDEX1].LRU.end()));
 						dirty_replace=cache[cache_no].cacheset[INDEX1].dirty[LRU_replace];
 						
@@ -733,16 +737,16 @@ int read_request(string read_addr,int cache_no)
 						         //}						
 							//else
 							rep_addr.append(hex2bin(cache[cache_no].cacheset[INDEX1].TAG[LRU_replace]));				
-							cout<<hex2bin(rep_addr)<<endl;
+							//cout<<hex2bin(rep_addr)<<endl;
 							
 					        rep_addr.append(INDEX);
 							
-							cout<<"   "<<INDEX<<endl;
+							//cout<<"   "<<INDEX<<endl;
 							rep_addr.append(cachep[cache_no].BLOCK_OFFSET_BITS,'0');//add random block bits
 							rep_addr=rep_addr.substr(rep_addr.length()-32);
-							cout<<rep_addr<<endl;
+							//cout<<rep_addr<<endl;
 							rep_addr=bin2hex(rep_addr);
-							cout<<rep_addr<<endl;
+							//cout<<rep_addr<<endl;
 							
 							cache[cache_no].cacheset[INDEX1].dirty[LRU_replace]=false;
 							if(cache_no!=C_NUM-1)//check if it's the last cache
@@ -782,10 +786,10 @@ int read_request(string read_addr,int cache_no)
 		    } 
 		else //tag doesn't match and there is space
 			{
-					cout<<"Read request,Tag No Match, Set Space "<<bin2hex(read_addr)<<" Cache No : "<<cache_no<<endl;	
+					//cout<<"Read request,Tag No Match, Set Space "<<bin2hex(read_addr)<<" Cache No : "<<cache_no<<endl;	
 				if(cache_no!=C_NUM-1)//check if it's the last cache
 					{	
-						cout<<"Sending read request "<<endl;
+						//cout<<"Sending read request "<<endl;
 						hit=read_request(bin2hex(read_addr),(cache_no+1));
 					}
 				else
@@ -826,7 +830,7 @@ int main(int argc, char* argv[])
 		return 0;
 	}
 	else
-		cout<<"No of arguments is "<<argc<<endl;
+		//cout<<"No of arguments is "<<argc<<endl;
 	
 		if(atoi(argv[5])==0)
 		   C_NUM=1;
@@ -870,20 +874,20 @@ int main(int argc, char* argv[])
 		victim[0].victimset.valid.resize(victimp[0].ASSOC);
 
 	//VIctim Initialization ended	
+		
+		cout<<"===== Simulator configuration ====="<<endl;
+		
+		cout<<"BLOCKSIZE:"<<setw(15)<<argv[1]<<endl;
+		cout<<"L1_SIZE:"<<setw(19)<<argv[2]<<endl;;
+		cout<<"L1_ASSOC:"<<setw(15)<<argv[3]<<endl;
+		cout<<"VC_NUM_BLOCKS:"<<setw(11)<<argv[4]<<endl;
+		cout<<"L2_SIZE:"<<setw(19)<<argv[5]<<endl;
+		cout<<"L2_ASSOC:"<<setw(15)<<argv[6]<<endl;
+		cout<<"trace_file:"<<setw(25)<<argv[7]<<endl;
+		
 
-		for(int i=0;i<C_NUM;i++)
-		{
-				cout<<cachep[i].BLOCKSIZE<<endl;
-				cout<<cachep[i].SIZE<<endl;
-				cout<<cachep[i].ASSOC<<endl;
-				cout<<cachep[i].SET_NO<<endl;
-				cout<<cachep[i].INDEX_SIZE<<endl;
-				cout<<cachep[i].BLOCK_OFFSET_BITS<<endl;
-				cout<<victimp[i].SET_NO<<endl;
-				cout<<victimp[i].ASSOC<<endl;
-
-				
-		}
+			
+		
 		
 	
 		cache.resize(C_NUM);
@@ -923,16 +927,16 @@ int main(int argc, char* argv[])
 		if(rw[0]=='w')
 		{
 			count++;
-			cout<<"Iteration number= "<<count;
-			cout<<"Sending write request to cache0 for Address "<<linebuffer<<endl;
+			//cout<<"Iteration number= "<<count;
+			//cout<<"Sending write request to cache0 for Address "<<linebuffer<<endl;
 			
 			write_request(linebuffer,0);
 		}
 		if(rw[0]=='r')
 		{	
 			count++;
-			cout<<"Iteration number= "<<count;
-			cout<<"Sending read request to cache0 for Address "<<linebuffer<<endl;
+			//cout<<"Iteration number= "<<count;
+			//cout<<"Sending read request to cache0 for Address "<<linebuffer<<endl;
 			
 			hit=read_request(linebuffer,0);
 
@@ -949,45 +953,99 @@ int main(int argc, char* argv[])
 	//cout<<victim[0].victimset.LRU[5]<<endl;
 
 
-	for(int i=0;i<victimp[0].ASSOC;i++)
-	{
-		int z=find(victim[0].victimset.LRU.begin(),victim[0].victimset.LRU.end(),i)-victim[0].victimset.LRU.begin();
-		cout<<"   "<<victim[0].victimset.victim_TAG[z];
-		if(victim[0].victimset.dirty[z]==true)
-			cout<< " D";
-	}
 	
-	cout<<endl;
+	
+
+
+
+	
+
+
 	for(int i=0;i<C_NUM;i++)
 	{
+		cout<<endl;
+		cout<<"===== L"<<i+1<<" contents ====="<<endl;
 		for(int j=0;j<cachep[i].SET_NO;j++)
 		{
-			cout<<"SET "<<j<<"     ";
+			cout<<" SET   "<<j<<":   ";
 			for(int k=0;k<cachep[i].ASSOC;k++)
 			{
+				
 				int z=find(cache[i].cacheset[j].LRU.begin(),cache[i].cacheset[j].LRU.end(),k)-cache[i].cacheset[j].LRU.begin();
 				
-				cout<<"   "<<cache[i].cacheset[j].TAG[z];
+				cout<<"    "<<cache[i].cacheset[j].TAG[z];
 				if(cache[i].cacheset[j].dirty[z]==true)
 					cout<<"  D";
+				
 			} 
 			cout<<endl;
-		} }
+			
+		} 
+
+
+		if(victimp[i].ASSOC != 0)
+		{
+			cout<<endl<<"===== VC contents ====="<<endl;
+			cout<<" SET 0: ";
+			for(int i=0;i<victimp[0].ASSOC;i++)
+			{
+				int z=find(victim[0].victimset.LRU.begin(),victim[0].victimset.LRU.end(),i)-victim[0].victimset.LRU.begin();
+				cout<<"  "<<victim[0].victimset.victim_TAG[z];
+				if(victim[0].victimset.dirty[z]==true)
+					cout<< " D"<<setw(3);
+			}
+			cout<<endl;
+
+
+		}
+
+	}
 	
-	
-	for(int i=0;i<C_NUM;i++)
+	victimp[0].SWAP_REQUEST=(float)victimp[0].SWAP_RATE/((float)cachep[0].READS+(float)cachep[0].WRITE);
+	cachep[0].MISS_RATE=((float)cachep[0].READS_MISSES+(float)cachep[0].WRITES_MISSES-(float)victimp[0].SWAP_NO)/((float)cachep[0].READS+(float)cachep[0].WRITE);
+	if(C_NUM==2)
 	{
-		cout<<"Read request: "<<cachep[i].READS<<endl;
-		cout<<"Write request: "<<cachep[i].WRITE<<endl;
-		cout<<"Read misses: "<<cachep[i].READS_MISSES<<endl;
-		cout<<"Write misses: "<<cachep[i].WRITES_MISSES<<endl;
-		cout<<"WRITE BACKS: "<<cachep[i].WRITE_BACKS<<endl;
-		cout<<"SWAP Rate: "<<victimp[0].SWAP_RATE<<endl;
-		cout<<"No. of swaps: "<<victimp[0].SWAP_NO<<endl;
-	}	
+		cachep[1].MISS_RATE=((float)cachep[1].READS_MISSES)/((float)cachep[1].READS);
+	}
+	char ch ='a';
+	cout<<endl<<"===== Simulation results ====="<<endl;
 	
-	cout<<"Memory traffic "<<memory_traffic<<endl;
-	
+		
+		cout<<ch++<<". "<<"number of L1 reads:"<<setw(16)<<cachep[0].READS<<endl;
+		cout<<ch++<<". number of L1 read misses:"<<setw(9)<<cachep[0].READS_MISSES<<endl;
+		cout<<ch++<<". number of L1 writes:"<<setw(15)<<cachep[0].WRITE<<endl;
+		cout<<ch++<<". number of L1 write misses:"<<setw(8)<<cachep[0].WRITES_MISSES<<endl;
+		cout<<ch++<<". number of swap requests:"<<setw(12)<<victimp[0].SWAP_RATE<<endl;
+		cout<<ch++<<". swap request rate:"<<setw(18)<<setprecision(4)<<fixed<<victimp[0].SWAP_REQUEST<<endl;
+		cout<<ch++<<". number of swaps:"<<setw(18)<<victimp[0].SWAP_NO<<endl;
+		cout<<ch++<<". combined L1+VC miss rate:"<<setw(8)<<setprecision(4)<<fixed<<cachep[0].MISS_RATE<<endl;
+		cout<<ch++<<". number writebacks from L1/VC:"<<setw(5)<<cachep[0].WRITE_BACKS<<endl;  
+	if(C_NUM==2)
+	{
+		cout<<ch++<<". "<<"number of L2 reads:"<<setw(16)<<cachep[1].READS<<endl;
+		cout<<ch++<<". number of L2 read misses:"<<setw(9)<<cachep[1].READS_MISSES<<endl;
+		cout<<ch++<<". number of L2 writes:"<<setw(15)<<cachep[1].WRITE<<endl;
+		cout<<ch++<<". number of L2 write misses:"<<setw(8)<<cachep[1].WRITES_MISSES<<endl;
+		cout<<ch++<<". L2 miss rate:"<<setw(22)<<setprecision(4)<<fixed<<cachep[1].MISS_RATE<<endl;
+		cout<<ch++<<". number of writebacks from L2:"<<setw(5)<<cachep[1].WRITE_BACKS<<endl;
+		
+
+		
+	}
+
+	else
+
+		{
+		cout<<ch++<<". "<<"number of L2 reads:"<<setw(16)<<"0"<<endl;
+		cout<<ch++<<". number of L2 read misses:"<<setw(9)<<"0"<<endl;
+		cout<<ch++<<". number of L2 writes:"<<setw(15)<<"0"<<endl;
+		cout<<ch++<<". number of L2 write misses:"<<setw(8)<<"0"<<endl;
+		cout<<ch++<<". L2 miss rate:"<<setw(22)<<"0.0000"<<endl;
+		cout<<ch++<<". number of writebacks from L2:"<<setw(5)<<"0"<<endl;
+		
+
+		}	
+	cout<<ch++<<". total memory traffic: "<<memory_traffic<<endl;
 	
 	return 0;
 }
