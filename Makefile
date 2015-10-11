@@ -1,14 +1,14 @@
-CC = g++
+CPP = g++
 OPT = -O3
 #OPT = -g
 WARN = -Wall
-CFLAGS = $(OPT) $(WARN) $(INC) $(LIB)
+CFLAGS = $(OPT) $(INC) $(LIB)
 
 # List all your .cc files here (source files, excluding header files)
-SIM_SRC = main.cc world.cc
+SIM_SRC = cachesim.cpp
 
 # List corresponding compiled object files here (.o files)
-SIM_OBJ = main.o world.o
+SIM_OBJ = cachesim.o 
  
 #################################
 
@@ -21,14 +21,14 @@ all: sim_cache
 # rule for making sim_cache
 
 sim_cache: $(SIM_OBJ)
-	$(CC) -o sim_cache $(CFLAGS) $(SIM_OBJ) -lm
+	$(CPP) -o sim_cache $(CFLAGS) $(SIM_OBJ) -lm
 	@echo "-----------DONE WITH SIM_CACHE-----------"
 
 
 # generic rule for converting any .cc file to any .o file
  
-.cc.o:
-	$(CC) $(CFLAGS)  -c $*.cc
+.cpp.o:
+	$(CPP) $(CFLAGS)  -c $*.cpp
 
 
 # type "make clean" to remove all .o files plus the sim_cache binary

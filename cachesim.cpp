@@ -103,7 +103,7 @@ void write_request(string write_addr,int cache_no)
 	string TAG;
 	string INDEX;
 	int INDEX1;
-	int LRU_replace;
+	unsigned int LRU_replace;
 	bool dirty_replace;
 	string rep_addr;
 	int hit;
@@ -119,11 +119,11 @@ void write_request(string write_addr,int cache_no)
 	int victim_match_block;
 	
 	//assoc will give the block number of the valid bit, which is false
-	int assoc=find(cache[cache_no].cacheset[INDEX1].valid.begin(),cache[cache_no].cacheset[INDEX1].valid.end(),false)-cache[cache_no].cacheset[INDEX1].valid.begin();
+	unsigned int assoc=find(cache[cache_no].cacheset[INDEX1].valid.begin(),cache[cache_no].cacheset[INDEX1].valid.end(),false)-cache[cache_no].cacheset[INDEX1].valid.begin();
 	if(assoc>=cache[cache_no].cacheset[INDEX1].valid.size())   //set is full
 			{
 				//find if address block already exist in cache
-				int TAG_match=find(cache[cache_no].cacheset[INDEX1].TAG.begin(),cache[cache_no].cacheset[INDEX1].TAG.end(),TAG)-cache[cache_no].cacheset[INDEX1].TAG.begin();
+				unsigned int TAG_match=find(cache[cache_no].cacheset[INDEX1].TAG.begin(),cache[cache_no].cacheset[INDEX1].TAG.end(),TAG)-cache[cache_no].cacheset[INDEX1].TAG.begin();
 				if(TAG_match>=cache[cache_no].cacheset[INDEX1].TAG.size())  //Not in set& set is full																												 }
 				{
 						cachep[cache_no].WRITES_MISSES++;
@@ -142,13 +142,13 @@ void write_request(string write_addr,int cache_no)
 							//cout<<bin2hex(victim_search)<<endl;
 
 							victim_match_block=find(victim[cache_no].victimset.victim_TAG.begin(),victim[cache_no].victimset.victim_TAG.end(),bin2hex(victim_search))-victim[cache_no].victimset.victim_TAG.begin();
-							int victim_assoc=find(victim[cache_no].victimset.valid.begin(),victim[cache_no].victimset.valid.end(),false)-victim[cache_no].victimset.valid.begin();
+							unsigned int victim_assoc=find(victim[cache_no].victimset.valid.begin(),victim[cache_no].victimset.valid.end(),false)-victim[cache_no].victimset.valid.begin();
 							
 							if(victim_match_block>=victim[cache_no].victimset.victim_TAG.size()&&(victim_assoc>=victim[cache_no].victimset.valid.size())) //Not found in victim and victim is full
 							{
 								//find LRU, evict if not dirty, if dirty write to level 2
 
-								int victim_LRU_replace=	distance(victim[cache_no].victimset.LRU.begin(),max_element(victim[cache_no].victimset.LRU.begin(),victim[cache_no].victimset.LRU.end()));
+								unsigned int victim_LRU_replace=	distance(victim[cache_no].victimset.LRU.begin(),max_element(victim[cache_no].victimset.LRU.begin(),victim[cache_no].victimset.LRU.end()));
 								bool victim_dirty_replace=victim[cache_no].victimset.dirty[victim_LRU_replace];
 								
 
@@ -203,7 +203,7 @@ void write_request(string write_addr,int cache_no)
 								victim[cache_no].victimset.valid[victim_LRU_replace]=true;
 								//Update victim LRU's
 
-								for(int i=0;i<victim[cache_no].victimset.LRU.size();i++)
+								for(unsigned int i=0;i<victim[cache_no].victimset.LRU.size();i++)
 								{
 									if(victim[cache_no].victimset.valid[i]==true&&(i!=victim_LRU_replace))
 											victim[cache_no].victimset.LRU[i]++;
@@ -216,7 +216,7 @@ void write_request(string write_addr,int cache_no)
 								cache[cache_no].cacheset[INDEX1].TAG[LRU_replace]=TAG;
 								cache[cache_no].cacheset[INDEX1].LRU[LRU_replace]=0;
 
-								for(int i=0;i<cache[cache_no].cacheset[INDEX1].LRU.size();i++)
+								for(unsigned int i=0;i<cache[cache_no].cacheset[INDEX1].LRU.size();i++)
 								{
 								if(cache[cache_no].cacheset[INDEX1].valid[i]==true&&(i!=LRU_replace))
 								{
@@ -238,7 +238,7 @@ void write_request(string write_addr,int cache_no)
 								victim_replace=victim_replace.substr(victim_replace.length()-32);
 								victim_replace=bin2hex(victim_replace);
 
-								for(int i=0;i<victim[cache_no].victimset.LRU.size();i++)  //updating LRU first for victim and then adding tag
+								for(unsigned int i=0;i<victim[cache_no].victimset.LRU.size();i++)  //updating LRU first for victim and then adding tag
 								{
 									if(victim[cache_no].victimset.valid[i]==true)
 										victim[cache_no].victimset.LRU[i]++;
@@ -264,7 +264,7 @@ void write_request(string write_addr,int cache_no)
 								cache[cache_no].cacheset[INDEX1].TAG[LRU_replace]=TAG;
 								cache[cache_no].cacheset[INDEX1].LRU[LRU_replace]=0;
 
-								for(int i=0;i<cache[cache_no].cacheset[INDEX1].LRU.size();i++)
+								for(unsigned int i=0;i<cache[cache_no].cacheset[INDEX1].LRU.size();i++)
 								{
 								if(cache[cache_no].cacheset[INDEX1].valid[i]==true&&(i!=LRU_replace))
 								{
@@ -299,7 +299,7 @@ void write_request(string write_addr,int cache_no)
 
 								//swapping completed, updating LRU
 
-								for(int i=0;i<victim[cache_no].victimset.LRU.size();i++)
+								for(unsigned int i=0;i<victim[cache_no].victimset.LRU.size();i++)
 								{
 									if(victim[cache_no].victimset.valid[i]==true&&(victim[cache_no].victimset.LRU[i]<victim[cache_no].victimset.LRU[victim_match_block]))
 											victim[cache_no].victimset.LRU[i]++;
@@ -309,7 +309,7 @@ void write_request(string write_addr,int cache_no)
 								cache[cache_no].cacheset[INDEX1].LRU[LRU_replace]=0;
 
 
-								for(int i=0;i<cache[cache_no].cacheset[INDEX1].LRU.size();i++)
+								for(unsigned int i=0;i<cache[cache_no].cacheset[INDEX1].LRU.size();i++)
 								{
 								if(cache[cache_no].cacheset[INDEX1].valid[i]==true&&(i!=LRU_replace))
 								{
@@ -373,7 +373,7 @@ void write_request(string write_addr,int cache_no)
 							cache[cache_no].cacheset[INDEX1].valid[LRU_replace]=true;
 							cache[cache_no].cacheset[INDEX1].TAG[LRU_replace]=TAG;
 							cache[cache_no].cacheset[INDEX1].LRU[LRU_replace]=0;
-							for(int i=0;i<cache[cache_no].cacheset[INDEX1].LRU.size();i++)
+							for(unsigned int i=0;i<cache[cache_no].cacheset[INDEX1].LRU.size();i++)
 							{
 								if(cache[cache_no].cacheset[INDEX1].valid[i]==true&&(i!=LRU_replace))
 								{
@@ -392,7 +392,7 @@ void write_request(string write_addr,int cache_no)
 					cache[cache_no].cacheset[INDEX1].dirty[TAG_match]=true;
 					cache[cache_no].cacheset[INDEX1].valid[TAG_match]=true;
 					cache[cache_no].cacheset[INDEX1].TAG[TAG_match]=TAG;
-					for(int i=0;i<cache[cache_no].cacheset[INDEX1].LRU.size();i++)
+					for(unsigned int i=0;i<cache[cache_no].cacheset[INDEX1].LRU.size();i++)
 					{
 						if(cache[cache_no].cacheset[INDEX1].LRU[i]<cache[cache_no].cacheset[INDEX1].LRU[TAG_match])
 							cache[cache_no].cacheset[INDEX1].LRU[i]++;
@@ -408,7 +408,7 @@ void write_request(string write_addr,int cache_no)
 				}	
 	else  //set is not full
 	{
-		int TAG_match=find(cache[cache_no].cacheset[INDEX1].TAG.begin(),cache[cache_no].cacheset[INDEX1].TAG.end(),TAG)-cache[cache_no].cacheset[INDEX1].TAG.begin();
+		unsigned int TAG_match=find(cache[cache_no].cacheset[INDEX1].TAG.begin(),cache[cache_no].cacheset[INDEX1].TAG.end(),TAG)-cache[cache_no].cacheset[INDEX1].TAG.begin();
 		if(TAG_match>=cache[cache_no].cacheset[INDEX1].TAG.size()) //set is not full,and doesn't have the particular element
 		{
 			cachep[cache_no].WRITES_MISSES++;
@@ -428,7 +428,7 @@ void write_request(string write_addr,int cache_no)
 			cache[cache_no].cacheset[INDEX1].valid[assoc]=true;
 			cache[cache_no].cacheset[INDEX1].TAG[assoc]=TAG;
 			cache[cache_no].cacheset[INDEX1].LRU[assoc]=0;
-			for(int i=0;i<cache[cache_no].cacheset[INDEX1].LRU.size();i++)
+			for(unsigned int i=0;i<cache[cache_no].cacheset[INDEX1].LRU.size();i++)
 			{
 				if(cache[cache_no].cacheset[INDEX1].valid[i]==true&&(i!=assoc))
 					cache[cache_no].cacheset[INDEX1].LRU[i]++;
@@ -445,7 +445,7 @@ void write_request(string write_addr,int cache_no)
 					cache[cache_no].cacheset[INDEX1].valid[TAG_match]=true;
 					cache[cache_no].cacheset[INDEX1].TAG[TAG_match]=TAG;	
 					
-			for(int i=0;i<cache[cache_no].cacheset[INDEX1].LRU.size();i++)
+			for(unsigned int i=0;i<cache[cache_no].cacheset[INDEX1].LRU.size();i++)
 					{
 						if((cache[cache_no].cacheset[INDEX1].LRU[i]<cache[cache_no].cacheset[INDEX1].LRU[TAG_match])&&(cache[cache_no].cacheset[INDEX1].valid[i]==true))
 							cache[cache_no].cacheset[INDEX1].LRU[i]++;
@@ -468,7 +468,7 @@ int read_request(string read_addr,int cache_no)
 	string TAG;
 	string INDEX;
 	int INDEX1;
-	int LRU_replace;
+	unsigned int LRU_replace;
 	bool dirty_replace;
 	string rep_addr;
 	int TAG_match=-1;
@@ -480,13 +480,13 @@ int read_request(string read_addr,int cache_no)
 	INDEX=read_addr.substr(TAG.length(),cachep[cache_no].INDEX_SIZE);
 	TAG=bin2hex(TAG);
 	
-	int victim_match_block;
+	unsigned int victim_match_block;
 	INDEX1=bin2dec(INDEX);
 	
 	//assoc will give the block number of the valid bit, which is false
-	int assoc=find(cache[cache_no].cacheset[INDEX1].valid.begin(),cache[cache_no].cacheset[INDEX1].valid.end(),false)-cache[cache_no].cacheset[INDEX1].valid.begin();
+	unsigned int assoc=find(cache[cache_no].cacheset[INDEX1].valid.begin(),cache[cache_no].cacheset[INDEX1].valid.end(),false)-cache[cache_no].cacheset[INDEX1].valid.begin();
 	
-	for(int i=0;i<cache[cache_no].cacheset[INDEX1].LRU.size();i++)
+	for(unsigned int i=0;i<cache[cache_no].cacheset[INDEX1].LRU.size();i++)
 	{
 		if((cache[cache_no].cacheset[INDEX1].valid[i]==true)&&(TAG==cache[cache_no].cacheset[INDEX1].TAG[i]))
 		   {
@@ -500,7 +500,7 @@ int read_request(string read_addr,int cache_no)
 		//cout<<"Read request,Tag Match, Set may or may not be empty  "<<bin2hex(read_addr)<<" Cache No : "<<cache_no<<endl;
 		cache[cache_no].cacheset[INDEX1].valid[TAG_match]=true;
 		cache[cache_no].cacheset[INDEX1].TAG[TAG_match]=TAG;
-		for(int i=0;i<cache[cache_no].cacheset[INDEX1].LRU.size();i++)
+		for(unsigned int i=0;i<cache[cache_no].cacheset[INDEX1].LRU.size();i++)
 					{
 						if((cache[cache_no].cacheset[INDEX1].LRU[i]<cache[cache_no].cacheset[INDEX1].LRU[TAG_match])&&(cache[cache_no].cacheset[INDEX1].valid[i]==true))
 							cache[cache_no].cacheset[INDEX1].LRU[i]++;
@@ -533,7 +533,7 @@ int read_request(string read_addr,int cache_no)
 							//cout<<"Victim size"<<victim[cache_no].victimset.victim_TAG.size()<<endl;
 
 
-							int victim_assoc=find(victim[cache_no].victimset.valid.begin(),victim[cache_no].victimset.valid.end(),false)-victim[cache_no].victimset.valid.begin();
+							unsigned int victim_assoc=find(victim[cache_no].victimset.valid.begin(),victim[cache_no].victimset.valid.end(),false)-victim[cache_no].victimset.valid.begin();
 							//cout<<"Victim_First_invalid="<<victim_assoc<<endl;
 							//cout<<"Victim match block "<<victim_match_block<<endl;
 							if(victim_match_block>=victim[cache_no].victimset.victim_TAG.size()&&(victim_assoc>=victim[cache_no].victimset.valid.size())) //Not found in victim
@@ -541,7 +541,7 @@ int read_request(string read_addr,int cache_no)
 								
 								//find LRU, evict if not dirty, if dirty write to level 2
 								
-								int victim_LRU_replace=	distance(victim[cache_no].victimset.LRU.begin(),(max_element(victim[cache_no].victimset.LRU.begin(),victim[cache_no].victimset.LRU.end())));
+								unsigned int victim_LRU_replace=	distance(victim[cache_no].victimset.LRU.begin(),(max_element(victim[cache_no].victimset.LRU.begin(),victim[cache_no].victimset.LRU.end())));
 								//cout<<"victim Lru "<<victim[0].victimset.victim_TAG[0]<<endl;
 								bool victim_dirty_replace=victim[cache_no].victimset.dirty[victim_LRU_replace];
 								
@@ -597,7 +597,7 @@ int read_request(string read_addr,int cache_no)
 								victim[cache_no].victimset.valid[victim_LRU_replace]=true;
 								//Update victim LRU's
 
-								for(int i=0;i<victim[cache_no].victimset.LRU.size();i++)
+								for(unsigned int i=0;i<victim[cache_no].victimset.LRU.size();i++)
 								{
 									if(victim[cache_no].victimset.valid[i]==true&&(i!=victim_LRU_replace))
 											victim[cache_no].victimset.LRU[i]++;
@@ -610,7 +610,7 @@ int read_request(string read_addr,int cache_no)
 								cache[cache_no].cacheset[INDEX1].TAG[LRU_replace]=TAG;
 								cache[cache_no].cacheset[INDEX1].LRU[LRU_replace]=0;
 
-								for(int i=0;i<cache[cache_no].cacheset[INDEX1].LRU.size();i++)
+								for(unsigned int i=0;i<cache[cache_no].cacheset[INDEX1].LRU.size();i++)
 								{
 								if(cache[cache_no].cacheset[INDEX1].valid[i]==true&&(i!=LRU_replace))
 								{
@@ -639,7 +639,7 @@ int read_request(string read_addr,int cache_no)
 								victim_replace=bin2hex(victim_replace);
 								//cout<<"Victim_repalce"<<victim_replace<<endl;
 
-								for(int i=0;i<victim[cache_no].victimset.LRU.size();i++)  //updating LRU first for victim and then adding tag
+								for(unsigned int i=0;i<victim[cache_no].victimset.LRU.size();i++)  //updating LRU first for victim and then adding tag
 								{
 									if(victim[cache_no].victimset.valid[i]==true)
 										victim[cache_no].victimset.LRU[i]++;
@@ -665,7 +665,7 @@ int read_request(string read_addr,int cache_no)
 								cache[cache_no].cacheset[INDEX1].TAG[LRU_replace]=TAG;
 								cache[cache_no].cacheset[INDEX1].LRU[LRU_replace]=0;
 
-								for(int i=0;i<cache[cache_no].cacheset[INDEX1].LRU.size();i++)
+								for(unsigned int i=0;i<cache[cache_no].cacheset[INDEX1].LRU.size();i++)
 								{
 								if(cache[cache_no].cacheset[INDEX1].valid[i]==true&&(i!=LRU_replace))
 								{
@@ -700,7 +700,7 @@ int read_request(string read_addr,int cache_no)
 
 								//swapping completed, updating LRU
 
-								for(int i=0;i<victim[cache_no].victimset.LRU.size();i++)
+								for(unsigned int i=0;i<victim[cache_no].victimset.LRU.size();i++)
 								{
 									if(victim[cache_no].victimset.valid[i]==true&&(victim[cache_no].victimset.LRU[i]<victim[cache_no].victimset.LRU[victim_match_block]))
 											victim[cache_no].victimset.LRU[i]++;
@@ -710,7 +710,7 @@ int read_request(string read_addr,int cache_no)
 								cache[cache_no].cacheset[INDEX1].LRU[LRU_replace]=0;
 
 
-								for(int i=0;i<cache[cache_no].cacheset[INDEX1].LRU.size();i++)
+								for(unsigned int i=0;i<cache[cache_no].cacheset[INDEX1].LRU.size();i++)
 								{
 								if(cache[cache_no].cacheset[INDEX1].valid[i]==true&&(i!=LRU_replace))
 								{
@@ -774,7 +774,7 @@ int read_request(string read_addr,int cache_no)
 							cache[cache_no].cacheset[INDEX1].valid[LRU_replace]=true;
 							cache[cache_no].cacheset[INDEX1].TAG[LRU_replace]=TAG;
 							cache[cache_no].cacheset[INDEX1].LRU[LRU_replace]=0;
-							for(int i=0;i<cache[cache_no].cacheset[INDEX1].LRU.size();i++)
+							for(unsigned int i=0;i<cache[cache_no].cacheset[INDEX1].LRU.size();i++)
 							{
 								if(cache[cache_no].cacheset[INDEX1].valid[i]==true&&(i!=LRU_replace))
 								{
@@ -801,7 +801,7 @@ int read_request(string read_addr,int cache_no)
 					cache[cache_no].cacheset[INDEX1].valid[assoc]=true;
 					cache[cache_no].cacheset[INDEX1].TAG[assoc]=TAG;
 					cache[cache_no].cacheset[INDEX1].LRU[assoc]=0;
-			for(int i=0;i<cache[cache_no].cacheset[INDEX1].LRU.size();i++)
+			for(unsigned int i=0;i<cache[cache_no].cacheset[INDEX1].LRU.size();i++)
 			{
 				if(cache[cache_no].cacheset[INDEX1].valid[i]==true&&(i!=assoc))
 					cache[cache_no].cacheset[INDEX1].LRU[i]++;
@@ -841,7 +841,7 @@ int main(int argc, char* argv[])
 		
 		cachep.resize(C_NUM);
 		
-		for(int i=0;i<C_NUM;i++)
+		for(unsigned int i=0;i<C_NUM;i++)
 		{
 				
 				cachep[i].BLOCKSIZE=atoi(argv[1]);
@@ -892,7 +892,7 @@ int main(int argc, char* argv[])
 	
 		cache.resize(C_NUM);
 	
-		for(int i=0;i<C_NUM;i++)
+		for(unsigned int i=0;i<C_NUM;i++)
 		{
 			//cout<<cachep[i].SET_NO<<endl;
 			cache[i].cacheset.resize(cachep[i].SET_NO);
@@ -900,9 +900,9 @@ int main(int argc, char* argv[])
 		}
 	
 	
-	for(int i=0;i<C_NUM;i++)
+	for(unsigned int i=0;i<C_NUM;i++)
 	{
-			for(int j=0;j<cachep[i].SET_NO;j++)
+			for(unsigned int j=0;j<cachep[i].SET_NO;j++)
 				{
 					cache[i].cacheset[j].TAG.resize(cachep[i].ASSOC);  
 					cache[i].cacheset[j].LRU.resize(cachep[i].ASSOC);
@@ -961,17 +961,17 @@ int main(int argc, char* argv[])
 	
 
 
-	for(int i=0;i<C_NUM;i++)
+	for(unsigned int i=0;i<C_NUM;i++)
 	{
 		cout<<endl;
 		cout<<"===== L"<<i+1<<" contents ====="<<endl;
-		for(int j=0;j<cachep[i].SET_NO;j++)
+		for(unsigned int j=0;j<cachep[i].SET_NO;j++)
 		{
 			cout<<" SET   "<<j<<":   ";
-			for(int k=0;k<cachep[i].ASSOC;k++)
+			for(unsigned int k=0;k<cachep[i].ASSOC;k++)
 			{
 				
-				int z=find(cache[i].cacheset[j].LRU.begin(),cache[i].cacheset[j].LRU.end(),k)-cache[i].cacheset[j].LRU.begin();
+				unsigned int z=find(cache[i].cacheset[j].LRU.begin(),cache[i].cacheset[j].LRU.end(),k)-cache[i].cacheset[j].LRU.begin();
 				
 				cout<<"    "<<cache[i].cacheset[j].TAG[z];
 				if(cache[i].cacheset[j].dirty[z]==true)
@@ -987,9 +987,9 @@ int main(int argc, char* argv[])
 		{
 			cout<<endl<<"===== VC contents ====="<<endl;
 			cout<<" SET 0: ";
-			for(int i=0;i<victimp[0].ASSOC;i++)
+			for(unsigned int i=0;i<victimp[0].ASSOC;i++)
 			{
-				int z=find(victim[0].victimset.LRU.begin(),victim[0].victimset.LRU.end(),i)-victim[0].victimset.LRU.begin();
+				unsigned int z=find(victim[0].victimset.LRU.begin(),victim[0].victimset.LRU.end(),i)-victim[0].victimset.LRU.begin();
 				cout<<"  "<<victim[0].victimset.victim_TAG[z];
 				if(victim[0].victimset.dirty[z]==true)
 					cout<< " D"<<setw(3);
@@ -1052,8 +1052,8 @@ int main(int argc, char* argv[])
 
 string trace_address(string line_elem)
 {
-	int len;
-	len=line_elem.length();
+	//int len;
+	//len=line_elem.length();
 	string addre=line_elem;
 	string addre_new;
 	if(addre.length()<8)
