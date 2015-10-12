@@ -80,6 +80,15 @@ void caches_init()
 			
 		}
 	}
+
+	for (int i=0;i<victimp[0].ASSOC;i++)
+	{
+
+		victim[0].victimset.victim_TAG[i]='x';
+		victim[0].victimset.LRU[i]=i;
+		victim[0].victimset.valid[i]=false;
+		victim[0].victimset.dirty[i]=false;
+	}
 	/*for(int i=0;i<C_NUM;i++)
 	{
 		for(int j=0;j<cachep[i].SET_NO;j++)
@@ -972,11 +981,13 @@ int main(int argc, char* argv[])
 			{
 				
 				unsigned int z=find(cache[i].cacheset[j].LRU.begin(),cache[i].cacheset[j].LRU.end(),k)-cache[i].cacheset[j].LRU.begin();
+				if(cache[i].cacheset[j].valid[z]==true)
+				{	
 				
 				cout<<"    "<<cache[i].cacheset[j].TAG[z];
 				if(cache[i].cacheset[j].dirty[z]==true)
 					cout<<"  D";
-				
+				}
 			} 
 			cout<<endl;
 			
@@ -990,10 +1001,15 @@ int main(int argc, char* argv[])
 			for(unsigned int i=0;i<victimp[0].ASSOC;i++)
 			{
 				unsigned int z=find(victim[0].victimset.LRU.begin(),victim[0].victimset.LRU.end(),i)-victim[0].victimset.LRU.begin();
+				if (victim[0].victimset.valid[z]==true)
+				{	
+
 				cout<<"  "<<victim[0].victimset.victim_TAG[z];
 				if(victim[0].victimset.dirty[z]==true)
 					cout<< " D"<<setw(3);
+				}			
 			}
+
 			cout<<endl;
 
 

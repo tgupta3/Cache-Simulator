@@ -3,8 +3,8 @@ import math
 import xlsxwriter
 import xlrd
 
-workbook = xlsxwriter.Workbook('Graph1.xlsx')
-worksheet = workbook.add_worksheet()
+"""workbook = xlsxwriter.Workbook('Graph1.xlsx')
+worksheet = workbook.add_worksheet()"""
 
 row=0
 col=0
@@ -19,7 +19,7 @@ read_col=4
 book=xlrd.open_workbook('cacti_table.xls')
 first_sheet=book.sheet_by_index(0)
 print first_sheet.cell(1,4)
-"""for i in range(1,12):
+'''for i in range(1,12):
 		htl=[]
 		htl.insert(0,round(first_sheet.cell(read_row,4).value,6))
 		
@@ -63,7 +63,7 @@ print first_sheet.cell(1,4)
 		int_size=int_size*2
 		temp_file.close()
 
-workbook.close()"""
+workbook.close()'''
 
 """L1 varied from 1kb to 256kb, l2 521 kb 8 way assoc"""
 
